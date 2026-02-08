@@ -103,80 +103,15 @@
 </div>
 
 <script>
-  // ====== CONFIG ======
-  var API_URL = "https://script.google.com/macros/s/AKfycbw_bqVsxfz3hKlfoqdWXYBjRnYXIs_Flchi4svbdLUL6QsY9uIjLmg91yq4EpGx8q3R/exec";
-  var TOKEN   = "c4m-desk-2026-!9x";
+  var API_URL = "https://script.google.com/macros/s/AKfycbyTyWwbKxwLlj7bfKiqRiXHYPDw4PWKn5CUhCGLdayrWxHr6TRegJA3oIVlhdbv3JvN/exec";
+  var TOKEN   = "PASTE_YOUR_TOKEN_HERE";
 
-  // ====== CLOCK + MODE ======
-  function pad(n){return (n<10?'0':'')+n}
-  function currentModeLabel_(mins){
-    // Focus: 07:30–10:00
-    if (mins>=450 && mins<600) return "FOCUS";
-    // Admin: 10:00–13:00
-    if (mins>=600 && mins<780) return "ADMIN";
-    // Creative: 13:00–17:30
-    if (mins>=780 && mins<1050) return "CREATIVE";
-    // Evening optional: 19:30–22:30
-    if (mins>=1170 && mins<1350) return "EVENING";
-    return "OFF";
-  }
-  function tickClock(){
-    var d=new Date();
-    var mins=d.getHours()*60+d.getMinutes();
-    document.getElementById('clock').innerHTML = pad(d.getHours())+':'+pad(d.getMinutes());
-    document.getElementById('mode').innerHTML = "MODE: " + currentModeLabel_(mins);
-  }
-  setInterval(tickClock, 1000); tickClock();
-
-  // ====== TIMER ======
-  var tInt=null, tSec=50*60;
-  function renderTimer(){
-    var m=Math.floor(tSec/60), s=tSec%60;
-    document.getElementById('timer').innerHTML = m+':'+(s<10?'0':'')+s;
-  }
-  function startTimer(mins){
-    if(tInt) clearInterval(tInt);
-    tSec=mins*60;
-    renderTimer();
-    tInt=setInterval(function(){
-      tSec--;
-      if(tSec<=0){ tSec=0; renderTimer(); clearInterval(tInt); tInt=null; return; }
-      renderTimer();
-    },1000);
-  }
-
-  // ====== XHR helpers (older iOS) ======
-  function xhrGet(url, cb){
-    var x=new XMLHttpRequest();
-    x.onreadystatechange=function(){
-      if(x.readyState===4){
-        if(x.status>=200 && x.status<300) cb(null, x.responseText);
-        else cb(new Error("HTTP "+x.status));
-      }
-    };
-    x.open("GET", url, true);
-    x.send();
-  }
-  function xhrPost(url, obj, cb){
-    var x=new XMLHttpRequest();
-    x.onreadystatechange=function(){
-      if(x.readyState===4){
-        if(x.status>=200 && x.status<300) cb(null, x.responseText);
-        else cb(new Error("HTTP "+x.status));
-      }
-    };
-    x.open("POST", url, true);
-    x.setRequestHeader("Content-Type", "text/plain;charset=utf-8");
-    x.send(JSON.stringify(obj));
-  }
-
-  // ====== TASKS ======
   var latest = { focus:null, admin:null, creative:null };
 
   function firstByType_(rows, type){
-    for(var i=0;i<rows.length;i++){
-      var r=rows[i];
-      if(String(r.type||"").toLowerCase()===type && String(r.status||"").toLowerCase()!=="done"){
+    for (var i=0;i<rows.length;i++){
+      var r = rows[i];
+      if ((r.type||"").toLowerCase() === type && (r.status||"").toLowerCase() !== "done"){
         return r;
       }
     }
@@ -189,43 +124,55 @@
     document.getElementById("laterTask").innerHTML = laterT || "—";
   }
 
+  // JSONP callback (Apps Script calls this)
+  function handleTasks(data){
+    if (!data || !data.rows){ setTasks("No data", "", ""); return; }
+
+    latest.focus = firstByType_(data.rows, "focus");
+    latest.admin = firstByType_(data.rows, "admin");
+    latest.creative = firstByType_(data.rows, "creative");
+
+    setTasks(
+      latest.focus ? latest.focus.task : "—",
+      latest.admin ? latest.admin.task : "—",
+      latest.creative ? latest.creative.task : "—"
+    );
+  }
+
   function loadTasks(){
-    // cache-bust for old safari
-    var url = API_URL + "?action=list&token=" + encodeURIComponent(TOKEN) + "&t=" + new Date().getTime();
-    xhrGet(url, function(err, text){
-      if(err){ setTasks("Couldn’t load", "Check iPad Safari", ""); return; }
-      var data;
-      try{ data=JSON.parse(text); }catch(e){ setTasks("Bad response", "", ""); return; }
-      if(!data.rows){ setTasks("No rows", "", ""); return; }
+    // Remove previous JSONP script if present
+    var old = document.getElementById("jsonpTasks");
+    if (old && old.parentNode) old.parentNode.removeChild(old);
 
-      latest.focus = firstByType_(data.rows, "focus");
-      latest.admin = firstByType_(data.rows, "admin");
-      latest.creative = firstByType_(data.rows, "creative");
-
-      setTasks(
-        latest.focus ? latest.focus.task : "—",
-        latest.admin ? latest.admin.task : "—",
-        latest.creative ? latest.creative.task : "—"
-      );
-    });
+    var s = document.createElement("script");
+    s.id = "jsonpTasks";
+    s.src = API_URL
+      + "?action=list"
+      + "&token=" + encodeURIComponent(TOKEN)
+      + "&callback=handleTasks"
+      + "&t=" + new Date().getTime(); // cache-bust
+    document.body.appendChild(s);
   }
 
   function markDone(type){
     var item = latest[type];
-    if(!item || !item.row) return;
+    if (!item || !item.row) return;
 
-    xhrPost(API_URL, { action:"done", token:TOKEN, row:item.row }, function(){
-      loadTasks();
-    });
+    // Use a GET beacon (old iOS friendly)
+    var img = new Image();
+    img.src = API_URL
+      + "?action=done"
+      + "&token=" + encodeURIComponent(TOKEN)
+      + "&row=" + encodeURIComponent(item.row)
+      + "&t=" + new Date().getTime();
+
+    // reload after a short delay
+    setTimeout(loadTasks, 600);
   }
 
+  // initial + refresh every minute
   loadTasks();
   setInterval(loadTasks, 60000);
-
-  // ====== CALENDAR (basic via ICS feed) ======
-  // We’ll plug this in next once tasks are stable on iPad.
-  document.getElementById("calendarList").innerHTML =
-    '<div class="calItem">Calendar: next step (ICS feed)</div>';
 </script>
 
 </body>
