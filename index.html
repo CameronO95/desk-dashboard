@@ -104,9 +104,23 @@
 
 <script>
   var API_URL = "https://script.google.com/macros/s/AKfycbyTyWwbKxwLlj7bfKiqRiXHYPDw4PWKn5CUhCGLdayrWxHr6TRegJA3oIVlhdbv3JvN/exec";
-  var TOKEN   = "PASTE_YOUR_TOKEN_HERE";
+  var TOKEN   = "c4m-desk-2026-!9x";
 
   var latest = { focus:null, admin:null, creative:null };
+
+  // ===== CLOCK =====
+  function pad(n){return (n<10?'0':'')+n}
+
+  function tickClock(){
+    var d = new Date();
+    document.getElementById('clock').innerHTML =
+      pad(d.getHours()) + ':' + pad(d.getMinutes());
+  }
+
+// run immediately + every second
+tickClock();
+setInterval(tickClock, 1000);
+
 
   function firstByType_(rows, type){
     for (var i=0;i<rows.length;i++){
@@ -126,18 +140,21 @@
 
   // JSONP callback (Apps Script calls this)
   function handleTasks(data){
-    if (!data || !data.rows){ setTasks("No data", "", ""); return; }
+  // Show API errors clearly on the iPad
+  if (!data) { setTasks("API returned nothing", "", ""); return; }
+  if (data.error) { setTasks("API error: " + data.error, (data.message||""), ""); return; }
+  if (!data.rows) { setTasks("No rows field in response", "", ""); return; }
 
-    latest.focus = firstByType_(data.rows, "focus");
-    latest.admin = firstByType_(data.rows, "admin");
-    latest.creative = firstByType_(data.rows, "creative");
+  latest.focus = firstByType_(data.rows, "focus");
+  latest.admin = firstByType_(data.rows, "admin");
+  latest.creative = firstByType_(data.rows, "creative");
 
-    setTasks(
-      latest.focus ? latest.focus.task : "—",
-      latest.admin ? latest.admin.task : "—",
-      latest.creative ? latest.creative.task : "—"
-    );
-  }
+  setTasks(
+    latest.focus ? latest.focus.task : "—",
+    latest.admin ? latest.admin.task : "—",
+    latest.creative ? latest.creative.task : "—"
+  );
+}
 
   function loadTasks(){
     // Remove previous JSONP script if present
