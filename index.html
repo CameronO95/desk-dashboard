@@ -99,6 +99,11 @@
       <div class="taskText" id="laterTask">—</div>
       <button class="doneBtn" onclick="markDone('creative')">Done</button>
     </div>
+    <div class="taskRow">
+      <div class="label">FILL</div>
+      <div class="taskText" id="lightTask">—</div>
+      <button class="doneBtn" onclick="markDone('light')">Done</button>
+    </div>
   </div>
 </div>
 
@@ -106,7 +111,7 @@
   var API_URL = "https://script.google.com/macros/s/AKfycbyTyWwbKxwLlj7bfKiqRiXHYPDw4PWKn5CUhCGLdayrWxHr6TRegJA3oIVlhdbv3JvN/exec";
   var TOKEN   = "c4m-desk-2026-!9x";
 
-  var latest = { focus:null, admin:null, creative:null };
+  var latest = { focus:null, admin:null, creative:null, light:null };
 
   // ===== CLOCK =====
   function pad(n){return (n<10?'0':'')+n}
@@ -148,6 +153,9 @@ setInterval(tickClock, 1000);
   latest.focus = firstByType_(data.rows, "focus");
   latest.admin = firstByType_(data.rows, "admin");
   latest.creative = firstByType_(data.rows, "creative");
+  latest.light = firstByType_(data.rows, "light");
+  document.getElementById("lightTask").innerHTML = latest.light ? latest.light.task : "—";
+
 
   setTasks(
     latest.focus ? latest.focus.task : "—",
@@ -172,6 +180,10 @@ setInterval(tickClock, 1000);
   }
 
   function markDone(type){
+    if (window._busyDone) return;
+    window._busyDone = true;
+    setTimeout(function(){ window._busyDone = false; }, 1200);
+
     var item = latest[type];
     if (!item || !item.row) return;
 
