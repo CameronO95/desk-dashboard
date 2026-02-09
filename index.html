@@ -62,11 +62,27 @@ body{
 #timer{ font-size:54px; margin:6px 0 10px; }
 
 /* prevent long text breaking layout */
-.taskText, .calItem, .spotifyTrack{
+/* protect layout text */
+.taskText, .spotifyTrack{
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
+
+/* calendar should wrap */
+.calItem{
+  white-space:normal;
+  overflow:visible;
+  text-overflow:clip;
+  word-wrap:break-word;
+}
+
+.calTime{
+  white-space:nowrap;
+  display:inline-block;
+  min-width:72px;
+}
+
 
 /* ===== BUTTONS (CONSISTENT ON iOS) ===== */
 button{
@@ -97,6 +113,12 @@ button:active{ opacity:0.75; }
 .label{ min-width:70px; opacity:.7; }
 .taskText{ flex:1; }
 
+.nowActive{
+  outline:2px solid rgba(255,255,255,0.25);
+  background:#2a2a2c;
+}
+
+
 /* ===== SPOTIFY PANEL ===== */
 .spotifyBox{
   min-height:120px;
@@ -119,6 +141,15 @@ button:active{ opacity:0.75; }
   .clock{ font-size:34px; }
   #timer{ font-size:46px; }
   .tasks .box{ font-size:20px; }
+}
+
+/* Calendar */
+.calNextStrong{
+  font-weight:600;
+  color:#fff;
+}
+.calPast{
+  opacity:.35;
 }
 
 
@@ -293,6 +324,12 @@ setInterval(tickClock, 1000);
       + "&row=" + encodeURIComponent(item.row)
       + "&t=" + new Date().getTime();
 
+    var row = document.getElementById("row-"+type);
+    if(row){
+      row.style.opacity="0.3";
+      setTimeout(function(){ row.style.opacity="1"; },300);
+    }
+
     // reload after a short delay
     setTimeout(loadTasks, 600);
   }
@@ -389,7 +426,12 @@ setInterval(tickClock, 1000);
   for(var x=0;x<timed.length;x++){
     var e3 = timed[x];
     var when = e3.start + "–" + e3.end;
-    html += "<div class='calItem'><span class='calTime'>"+when+"</span>"+escapeHtml_(e3.title)+"</div>";
+    var cls = "calItem";
+if(hhmmToMins(e3.end) < nowMins) cls += " calPast";
+if(nextEvent && e3.title === nextEvent.title && e3.start === nextEvent.start) cls += " calNextStrong";
+
+html += "<div class='"+cls+"'><span class='calTime'>"+when+"</span>"+escapeHtml_(e3.title)+"</div>";
+
   }
   list.innerHTML = html;
 }
