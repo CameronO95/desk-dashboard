@@ -193,7 +193,9 @@ button:active{ opacity:0.75; }
 
         <div style="margin-top:8px;">
           <button onclick="toggleTimer()" id="pauseBtn">Pause</button>
-        </div>
+          <button onclick="resetTimer()" id="resetBtn">Reset</button>
+      </div>
+
       </div>
 
 
@@ -264,6 +266,7 @@ setInterval(tickClock, 1000);
 // ===== TIMER (with pause/resume) =====
 var tInt = null;
 var tSec = 50 * 60;
+var lastDuration = 50 * 60;
 var isPaused = false;
 
 function renderTimer(){
@@ -276,6 +279,7 @@ function renderTimer(){
 function startTimer(mins){
   clearInterval(tInt);
   tSec = mins * 60;
+  lastDuration = tSec;
   isPaused = false;
 
   var pb = document.getElementById("pauseBtn");
@@ -303,6 +307,18 @@ function toggleTimer(){
 
   var pb = document.getElementById("pauseBtn");
   if (pb) pb.innerHTML = isPaused ? "Resume" : "Pause";
+}
+
+function resetTimer(){
+  clearInterval(tInt);
+  tInt = null;
+  isPaused = false;
+
+  tSec = lastDuration;
+  renderTimer();
+
+  var pb = document.getElementById("pauseBtn");
+  if (pb) pb.innerHTML = "Pause";
 }
 
 // initial render
