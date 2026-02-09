@@ -55,12 +55,18 @@
     </div>
 
     <div class="box calendarBox">
-      <div class="calendarTitle">Today</div>
-      <div id="calendarList">
-        <div class="calItem">Loading…</div>
-      </div>
-    </div>
+  <div class="calendarTitle">Today</div>
+
+  <div id="calNowNext" class="calItem" style="margin-bottom:10px; opacity:.95;">
+    <div><span class="calTime">NOW</span> <span id="calNow">—</span></div>
+    <div><span class="calTime">NEXT</span> <span id="calNext">—</span></div>
   </div>
+
+  <div id="calendarList">
+    <div class="calItem">Loading…</div>
+  </div>
+</div>
+
 
   <!-- MIDDLE: timer -->
   <div class="col mid">
@@ -206,23 +212,96 @@ setInterval(tickClock, 1000);
   //Calendar
   function handleCal(data){
   var list = document.getElementById("calendarList");
-  if(!data){ list.innerHTML = "<div class='calItem'>No calendar data</div>"; return; }
-  if(data.error){ list.innerHTML = "<div class='calItem'>Calendar error: "+data.error+"</div>"; return; }
+  var nowEl = document.getElementById("calNow");
+  var nextEl = document.getElementById("calNext");
+
+  if(!data){
+    list.innerHTML = "<div class='calItem'>No calendar data</div>";
+    nowEl.innerHTML = "—";
+    nextEl.innerHTML = "—";
+    return;
+  }
+  if(data.error){
+    list.innerHTML = "<div class='calItem'>Calendar error: "+data.error+"</div>";
+    nowEl.innerHTML = "—";
+    nextEl.innerHTML = "—";
+    return;
+  }
 
   var evs = data.events || [];
-  if(evs.length === 0){
-    list.innerHTML = "<div class='calItem'>No events today</div>";
+
+  // Hide all-day events (your preference)
+  var timed = [];
+  for (var i=0;i<evs.length;i++){
+    if (!evs[i].allDay) timed.push(evs[i]);
+  }
+
+  // Helpers
+  function hhmmToMins(t){
+    // "HH:mm"
+    var parts = String(t||"").split(":");
+    if(parts.length<2) return null;
+    return parseInt(parts[0],10)*60 + parseInt(parts[1],10);
+  }
+
+  var d = new Date();
+  var nowMins = d.getHours()*60 + d.getMinutes();
+
+  // Determine NOW / NEXT
+  var nowEvent = null;
+  var nextEvent = null;
+
+  for (var j=0;j<timed.length;j++){
+    var e = timed[j];
+    var s = hhmmToMins(e.start);
+    var en = hhmmToMins(e.end);
+    if (s === null || en === null) continue;
+
+    if (nowMins >= s && nowMins < en){
+      nowEvent = e;
+      break;
+    }
+  }
+
+  for (var k=0;k<timed.length;k++){
+    var e2 = timed[k];
+    var s2 = hhmmToMins(e2.start);
+    if (s2 === null) continue;
+    if (s2 > nowMins){
+      nextEvent = e2;
+      break;
+    }
+  }
+
+  if (nowEvent){
+    nowEl.innerHTML = escapeHtml_(nowEvent.title) + " (" + nowEvent.start + "–" + nowEvent.end + ")";
+  } else {
+    nowEl.innerHTML = "Free";
+  }
+
+  if (nextEvent){
+    var minsTo = hhmmToMins(nextEvent.start) - nowMins;
+    var inTxt = minsTo <= 1 ? "now" : ("in " + minsTo + " mins");
+    nextEl.innerHTML = escapeHtml_(nextEvent.title) + " — " + nextEvent.start + " (" + inTxt + ")";
+  } else {
+    nextEl.innerHTML = "Nothing else today";
+  }
+
+  // Render full agenda (timed only)
+  if(timed.length === 0){
+    list.innerHTML = "<div class='calItem'>No timed events today</div>";
     return;
   }
 
   var html = "";
-  for(var i=0;i<evs.length;i++){
-    var e = evs[i];
-    var when = e.allDay ? "All day" : (e.start + "–" + e.end);
-    html += "<div class='calItem'><span class='calTime'>"+when+"</span>"+escapeHtml_(e.title)+"</div>";
+  for(var x=0;x<timed.length;x++){
+    var e3 = timed[x];
+    var when = e3.start + "–" + e3.end;
+    html += "<div class='calItem'><span class='calTime'>"+when+"</span>"+escapeHtml_(e3.title)+"</div>";
   }
   list.innerHTML = html;
 }
+
 
 function loadCalendar(){
   var old = document.getElementById("jsonpCal");
