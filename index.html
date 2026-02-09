@@ -202,6 +202,51 @@ setInterval(tickClock, 1000);
   // initial + refresh every minute
   loadTasks();
   setInterval(loadTasks, 60000);
+
+  //Calendar
+  function handleCal(data){
+  var list = document.getElementById("calendarList");
+  if(!data){ list.innerHTML = "<div class='calItem'>No calendar data</div>"; return; }
+  if(data.error){ list.innerHTML = "<div class='calItem'>Calendar error: "+data.error+"</div>"; return; }
+
+  var evs = data.events || [];
+  if(evs.length === 0){
+    list.innerHTML = "<div class='calItem'>No events today</div>";
+    return;
+  }
+
+  var html = "";
+  for(var i=0;i<evs.length;i++){
+    var e = evs[i];
+    var when = e.allDay ? "All day" : (e.start + "–" + e.end);
+    html += "<div class='calItem'><span class='calTime'>"+when+"</span>"+escapeHtml_(e.title)+"</div>";
+  }
+  list.innerHTML = html;
+}
+
+function loadCalendar(){
+  var old = document.getElementById("jsonpCal");
+  if(old && old.parentNode) old.parentNode.removeChild(old);
+
+  var s = document.createElement("script");
+  s.id = "jsonpCal";
+  s.src = API_URL
+    + "?action=cal"
+    + "&token=" + encodeURIComponent(TOKEN)
+    + "&callback=handleCal"
+    + "&t=" + new Date().getTime();
+  document.body.appendChild(s);
+}
+
+function escapeHtml_(str){
+  str = String(str || "");
+  return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+}
+
+// Load once + refresh every 5 mins
+loadCalendar();
+setInterval(loadCalendar, 300000);
+
 </script>
 
 </body>
