@@ -190,10 +190,12 @@ button:active{ opacity:0.75; }
         <button onclick="startTimer(50)">50</button>
         <button onclick="startTimer(25)">25</button>
         <button onclick="startTimer(5)">Break</button>
+
+        <div style="margin-top:8px;">
+          <button onclick="toggleTimer()" id="pauseBtn">Pause</button>
+        </div>
       </div>
-      <div style="margin-top:6px;">
-       <button onclick="toggleTimer()" id="pauseBtn">Pause</button>
-</div>
+
 
     </td>
 
@@ -259,6 +261,52 @@ button:active{ opacity:0.75; }
 tickClock();
 setInterval(tickClock, 1000);
 
+// ===== TIMER (with pause/resume) =====
+var tInt = null;
+var tSec = 50 * 60;
+var isPaused = false;
+
+function renderTimer(){
+  var m = Math.floor(tSec / 60);
+  var s = tSec % 60;
+  document.getElementById('timer').innerHTML =
+    m + ':' + (s < 10 ? '0' : '') + s;
+}
+
+function startTimer(mins){
+  clearInterval(tInt);
+  tSec = mins * 60;
+  isPaused = false;
+
+  var pb = document.getElementById("pauseBtn");
+  if (pb) pb.innerHTML = "Pause";
+
+  renderTimer();
+
+  tInt = setInterval(function(){
+    if (isPaused) return;
+    tSec--;
+    if (tSec <= 0){
+      tSec = 0;
+      renderTimer();
+      clearInterval(tInt);
+      tInt = null;
+      return;
+    }
+    renderTimer();
+  }, 1000);
+}
+
+function toggleTimer(){
+  if (!tInt) return; // nothing running
+  isPaused = !isPaused;
+
+  var pb = document.getElementById("pauseBtn");
+  if (pb) pb.innerHTML = isPaused ? "Resume" : "Pause";
+}
+
+// initial render
+renderTimer();
 
   function firstByType_(rows, type){
     for (var i=0;i<rows.length;i++){
