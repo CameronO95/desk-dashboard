@@ -6,48 +6,50 @@
 <style>
 body{
   font-family:-apple-system,system-ui,Arial,sans-serif;
-  background:#111;color:#fff;margin:0;padding:12px;
-  -webkit-text-size-adjust:100%; /* stop iOS auto resizing text */
+  background:#111;
+  color:#fff;
+  margin:0;
+  padding:12px;
+  -webkit-text-size-adjust:100%;
 }
 
 *{ box-sizing:border-box; }
 
-.row{
-  display:flex;
+/* ===== TOP LAYOUT (OLD iPAD SAFE) ===== */
+.topTable{
   width:100%;
-  flex-wrap:nowrap;         /* never stack */
-  align-items:stretch;
+  border-collapse:separate;
+  border-spacing:12px;
+  table-layout:fixed;
 }
-.col{ display:flex; flex-direction:column; }
 
+.cell{ vertical-align:top; }
+
+.leftCell{ width:28%; }
+.midCell{ width:44%; }
+.rightCell{ width:28%; }
+
+/* ===== BOXES ===== */
 .box{
   background:#1c1c1e;
   border-radius:16px;
   padding:14px;
+  width:100%;
 }
 
-/* --- FLEX COLUMNS WITH MARGINS (NO gap) --- */
-/* side columns fixed */
-.left{
-  flex:0 0 28%;
-  margin-right:12px;
+/* vertical spacing inside each column */
+.leftCell .box,
+.midCell .box,
+.rightCell .box{
+  margin-bottom:12px;
+}
+.leftCell .box:last-child,
+.midCell .box:last-child,
+.rightCell .box:last-child{
+  margin-bottom:0;
 }
 
-/* middle column takes remaining space automatically */
-.mid{
-  flex:1 1 auto;
-  margin-right:12px;
-  min-width:0;              /* IMPORTANT for old Safari */
-}
-
-.right{
-  flex:0 0 28%;
-}
-
-.left .box, .mid .box, .right .box{ margin-bottom:12px; }
-.left .box:last-child, .mid .box:last-child, .right .box:last-child{ margin-bottom:0; }
-
-/* --- CONTENT --- */
+/* ===== CONTENT ===== */
 .clock{ font-size:40px; line-height:1; }
 .mode{ font-size:14px; opacity:.65; margin-top:6px; }
 
@@ -59,15 +61,14 @@ body{
 .timerBox{ min-height:140px; text-align:center; }
 #timer{ font-size:54px; margin:6px 0 10px; }
 
-/* prevent inner content forcing columns wider */
+/* prevent long text breaking layout */
 .taskText, .calItem, .spotifyTrack{
-  min-width:0;
   overflow:hidden;
   text-overflow:ellipsis;
   white-space:nowrap;
 }
 
-/* --- BUTTONS: FORCE CONSISTENCY ON iOS --- */
+/* ===== BUTTONS (CONSISTENT ON iOS) ===== */
 button{
   font-size:20px;
   padding:10px 12px;
@@ -85,21 +86,32 @@ button:active{ opacity:0.75; }
   font-size:16px;
   padding:8px 10px;
   margin-left:10px;
-  background:#e5e5ea;
+  background:#fff;
   color:#000;
 }
 
-/* --- TASKS --- */
+/* ===== TASKS ===== */
 .tasks{ margin-top:12px; }
 .tasks .box{ font-size:22px; }
 .taskRow{ display:flex; align-items:center; margin:10px 0; }
 .label{ min-width:70px; opacity:.7; }
 .taskText{ flex:1; }
-.doneBtn{
+
+/* ===== SPOTIFY PANEL ===== */
+.spotifyBox{
+  min-height:120px;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.spotifyTitle{ font-size:14px; opacity:.6; margin-bottom:6px; }
+.spotifyTrack{ font-size:18px; line-height:1.2; }
+.spotifyArtist{ font-size:14px; opacity:.7; }
+.spotifyControls{ margin-top:10px; }
+.spotifyBtn{
   font-size:16px;
   padding:8px 10px;
-  margin-left:10px;
-  background:#3a3a3c;
+  margin-right:6px;
 }
 
 /* Smaller screens */
@@ -107,40 +119,6 @@ button:active{ opacity:0.75; }
   .clock{ font-size:34px; }
   #timer{ font-size:46px; }
   .tasks .box{ font-size:20px; }
-}
-
-/* --- SPOTIFY PANEL --- */
-.spotifyBox{
-  min-height:120px;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-}
-
-.spotifyTitle{
-  font-size:14px;
-  opacity:.6;
-  margin-bottom:6px;
-}
-
-.spotifyTrack{
-  font-size:18px;
-  line-height:1.2;
-}
-
-.spotifyArtist{
-  font-size:14px;
-  opacity:.7;
-}
-
-.spotifyControls{
-  margin-top:10px;
-}
-
-.spotifyBtn{
-  font-size:16px;
-  padding:8px 10px;
-  margin-right:6px;
 }
 
 
@@ -151,51 +129,55 @@ button:active{ opacity:0.75; }
 <!-- TOP AREA -->
 <div class="row">
   <!-- LEFT: clock + calendar -->
-  <div class="col left">
-    <div class="box">
-      <div class="clock" id="clock">--:--</div>
-      <div class="mode" id="mode">MODE: —</div>
-    </div>
+  <table class="topTable">
+  <tr>
+    <!-- LEFT -->
+    <td class="cell leftCell">
+      <div class="box">
+        <div class="clock" id="clock">--:--</div>
+        <div class="mode" id="mode">MODE: —</div>
+      </div>
 
-    <div class="box calendarBox">
-  <div class="calendarTitle">Today</div>
+      <div class="box calendarBox">
+        <div class="calendarTitle">Today</div>
 
-  <div id="calNowNext" class="calItem" style="margin-bottom:10px; opacity:.95;">
-    <div><span class="calTime">NOW</span> <span id="calNow">—</span></div>
-    <div><span class="calTime">NEXT</span> <span id="calNext">—</span></div>
-  </div>
+        <div id="calNowNext" class="calItem" style="margin-bottom:10px; opacity:.95;">
+          <div><span class="calTime">NOW</span> <span id="calNow">—</span></div>
+          <div><span class="calTime">NEXT</span> <span id="calNext">—</span></div>
+        </div>
 
-  <div id="calendarList">
-    <div class="calItem">Loading…</div>
-  </div>
-</div>
+        <div id="calendarList">
+          <div class="calItem">Loading…</div>
+        </div>
+      </div>
+    </td>
 
+    <!-- MIDDLE -->
+    <td class="cell midCell">
+      <div class="box timerBox">
+        <div id="timer">50:00</div>
+        <button onclick="startTimer(50)">50</button>
+        <button onclick="startTimer(25)">25</button>
+        <button onclick="startTimer(5)">Break</button>
+      </div>
+    </td>
 
-  <!-- MIDDLE: timer -->
-  <div class="col mid">
-    <div class="box timerBox">
-      <div id="timer">50:00</div>
-      <button onclick="startTimer(50)">50</button>
-      <button onclick="startTimer(25)">25</button>
-      <button onclick="startTimer(5)">Break</button>
-    </div>
-  </div>
+    <!-- RIGHT -->
+    <td class="cell rightCell">
+      <div class="box quote" id="quote"><em>Stay consistent, not perfect.</em> - ChatGPT</div>
 
-  <!-- RIGHT: quote + spotify -->
-  <div class="col right">
-    <div class="box quote" id="quote">Stay consistent, not perfect.</div>
-    <div class="box spotifyBox" id="spotify">
-      <div class="spotifyTitle">Spotify</div>
-      <div class="spotifyTrack">Not playing</div>
-      <div class="spotifyArtist"></div>
-      <div class="spotifyControls">
-    <button class="spotifyBtn">Play</button>
-    <button class="spotifyBtn">Next</button>
-  </div>
-</div>
-
-  </div>
-</div>
+      <div class="box spotifyBox" id="spotify">
+        <div class="spotifyTitle">Spotify</div>
+        <div class="spotifyTrack">Not playing</div>
+        <div class="spotifyArtist"></div>
+        <div class="spotifyControls">
+          <button class="spotifyBtn">Play</button>
+          <button class="spotifyBtn">Next</button>
+        </div>
+      </div>
+    </td>
+  </tr>
+</table>
 
 <!-- BOTTOM: tasks -->
 <div class="tasks">
